@@ -1,0 +1,6 @@
+#!/usr/bin/ruby
+
+require 'bio-biostars-analytics'
+
+BioBiostarsAnalytics::cli
+

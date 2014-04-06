@@ -1,0 +1,260 @@
+#!/usr/bin/ruby
+
+analysis_script = <<EOR
+args <- commandArgs(TRUE)
+
+input_tsv_file <- 'INPUT_FILE_NAME'
+
+bioeval <- function(base, column, xlabel, ylabel, colour, scale, average=TRUE) {
+    biolevels <- levels(factor(base$age_in_month))
+    avg <- rep(0, times=length(biolevels))
+    for (i in 1:length(biolevels)) {
+        avg[i] <- mean(
+            column[ base$age_in_month == biolevels[i] ]
+        )
+    }
+
+    plot(
+            base$age_in_month,
+            t(column),
+            col=colour,
+            pch=19,
+            xlab=xlabel,
+            ylab=ylabel,
+            axes=FALSE,
+            ylim=c(min(column), max(column)/scale) # Scale, so that outliers don't squish the important details.
+        )
+    if (average) {
+        lines(biolevels, avg, col=rgb(.3,.3,.3))
+    }
+    # Trendline over all data:
+    abline(lm(column ~ base$age_in_month), col=rgb(0,.9,1.0), lwd=6)
+    # Trendline over the last 24 months:
+    lookback <- 24
+    lookback_months <- biostar$age_in_month[biostar$age_in_month > (max(biostar$age_in_month - lookback))]
+    trend <- lm(tail(column, length(lookback_months)) ~ lookback_months)
+    trend_prediction <- predict(trend, newdata=data.frame(x=lookback_months))
+    lines(x=lookback_months, y=trend_prediction, col=rgb(1.0,0,.6), lwd=6)
+    
+    # Draw axis:
+    axis(1,min(base$age_in_month):max(base$age_in_month))
+    axis(2,min(column):max(column))
+}
+
+biobarplot <- function(userstats, age, max_y, xlabel, ylabel, colour) {
+    barplot(
+            userstats,
+            col=colour,
+            xlab=xlabel,
+            ylab=ylabel,
+            ylim=c(0,max_y)
+        )
+}
+
+biostar <- read.table(
+        input_tsv_file,
+        sep="\t",
+        encoding="UTF-8",
+        row.names=NULL,
+        comment.char="",
+        col.names=c(
+            "age",
+            "date",
+            "year",
+            "month",
+            "day",
+            "new_posts_in_category_1",
+            "new_posts_in_category_2",
+            "new_posts_in_category_3",
+            "new_posts_in_category_4",
+            "new_posts_in_category_5",
+            "new_posts_in_category_6",
+            "new_posts_in_category_7",
+            "new_posts_in_category_8",
+            "new_posts_in_category_9",
+            "new_posts_in_category_10",
+            "new_posts_in_category_11",
+            "new_posts_in_category_12",
+            "new_posts_in_category_13",
+            "new_posts_in_category_14",
+            "new_posts_in_category_15",
+            "new_posts_in_category_16",
+            "new_votes_of_type_accept",
+            "new_votes_of_type_bookmark",
+            "new_votes_of_type_downvote",
+            "new_votes_of_type_upvote",
+            "new_posts",
+            "new_votes",
+            "new_users",
+            "posters",
+            "poster_ages",
+            "root_post_ages",
+            "vote_post_ages",
+            "biostarbabies",
+            "empty"
+        )
+    )
+
+biostar$age_in_month <- (
+        (
+            biostar$year -
+            rep(min(biostar$year), times=length(biostar$year))
+        )*12 +
+        biostar$month
+    )
+biostar$age_in_month <- biostar$age_in_month -
+            rep(min(biostar$age_in_month), times=length(biostar$age_in_month)) +
+            1
+
+# Which users were active in a month?
+users_per_month <- lapply(unique(sort(biostar$age_in_month)), function (age_in_month) { unique(sort(sapply(strsplit(paste(biostar[biostar$age_in_month == age_in_month, ]$posters, collapse = ","), split = ","), as.integer))) })
+
+# How many users were active in a month?
+userfreq <- rep(0, max(biostar$age_in_month))
+for (age_in_month in min(biostar$age_in_month):max(biostar$age_in_month)) {
+    userfreq[age_in_month] <- length(unlist(users_per_month[age_in_month]))
+}
+
+# Determine the number of months for which users have been active.
+#  1. over the whole time span
+#  2. except for the last three months
+useractivity <- table(as.numeric(table(unlist(users_per_month))))
+useractivity_wo_last_3_months <- table(as.numeric(table(unlist(users_per_month[c(seq(4, max(length(users_per_month))))]))))
+
+png("api_participation.png", height=900, width=1300, unit="px", pointsize=26)
+biobarplot(
+        useractivity,
+        max(biostar$age_in_month),
+        (floor(useractivity[1] / 1000) + 1) * 1000,
+        'Month of Participation',
+        'Number of Active Users',
+        "#ee6633"
+    )
+dev.off()
+
+png("api_participation_wo_last_3_months.png", height=900, width=1300, unit="px", pointsize=26)
+biobarplot(
+  useractivity_wo_last_3_months,
+  max(biostar$age_in_month),
+  (floor(useractivity_wo_last_3_months[1] / 1000) + 1) * 1000,
+  'Month of Participation',
+  'Number of Active Users',
+  "#ee6633"
+)
+dev.off()
+
+userfreq_table <- as.table(userfreq)
+rownames(userfreq_table) <- seq(length(userfreq))
+png("api_users.png", height=900, width=1300, unit="px", pointsize=26)
+biobarplot(
+  userfreq_table,
+  max(biostar$age_in_month),
+  600,
+  'Biostar Month',
+  'Number of Active Users',
+  "#ff2233"
+)
+dev.off()
+
+categories_images = c(
+        "api_category_1.png",
+        "api_category_2.png",
+        "api_category_3.png",
+        "api_category_4.png",
+        "api_category_5.png",
+        "api_category_6.png",
+        "api_category_7.png",
+        "api_category_8.png",
+        "api_category_9.png",
+        "api_category_10.png",
+        "api_category_11.png",
+        "api_category_12.png",
+        "api_category_13.png",
+        "api_category_14.png",
+        "api_category_15.png",
+        "api_category_16.png",
+        "api_upvotes.png",
+        "api_downvotes.png",
+        "api_bookmarks.png",
+        "api_accepts.png"
+    )
+categories_values = list(
+        biostar$new_posts_in_category_1,
+        biostar$new_posts_in_category_2,
+        biostar$new_posts_in_category_3,
+        biostar$new_posts_in_category_4,
+        biostar$new_posts_in_category_5,
+        biostar$new_posts_in_category_6,
+        biostar$new_posts_in_category_7,
+        biostar$new_posts_in_category_8,
+        biostar$new_posts_in_category_9,
+        biostar$new_posts_in_category_10,
+        biostar$new_posts_in_category_11,
+        biostar$new_posts_in_category_12,
+        biostar$new_posts_in_category_13,
+        biostar$new_posts_in_category_14,
+        biostar$new_posts_in_category_15,
+        biostar$new_posts_in_category_16,
+        biostar$new_votes_of_type_upvote,
+        biostar$new_votes_of_type_downvote,
+        biostar$new_votes_of_type_bookmark,
+        biostar$new_votes_of_type_accept
+    )
+categories_labels = c(
+        "Questions per Day",
+        "Answers per Day",
+        "Comments per Day",
+        "Tutorials per Day",
+        "Blogs Posts per Day",
+        "Forums Posts per Day",
+        "News per Day",
+        " -- Unknown, sorry, no time to look it up now -- ",
+        "Tool Announcements per Day",
+        "FixMes per Day",
+        "Videos per Day",
+        "Job Postings per Day",
+        "Research Papers per Day",
+        "Tips per Day",
+        "Polls per Day",
+        "Ads per Day",
+        "Upvotes per Day",
+        "Downvotes per Day",
+        "Bookmarks per Day",
+        "Accepts per Day"
+    )
+for (category in seq(length(categories_images))) {
+    png(categories_images[category], height=900, width=1300, unit="px", pointsize=26)
+    bioeval(
+            biostar,
+            unlist(categories_values[category]),
+            'Biostar Month',
+            categories_labels[category],
+            rgb(100,100,0,20,maxColorValue=255),
+            2
+        )
+    dev.off()
+}
+EOR
+
+R = '/usr/bin/R'
+
+unless File.exist?(R) then
+  puts 'Please install R (http://www.r-project.org) as: /usr/bin/R'
+  puts ''
+  puts 'Also, install the plyr package via: install.packages("plyr")'
+  exit 1
+end
+
+if ARGV.length != 1 then
+  puts 'Usage: biostar_api_stats apitsvfile'
+  puts ''
+  puts 'Example (data provided at http://github.com/joejimbo/bioruby-biostars-analytics):'
+  puts '  biostar_api_stats data/20140328_api.tsv'
+  exit 2
+end
+
+IO.popen("#{R} --no-save", 'w') { |io|
+  io.puts(analysis_script.sub('INPUT_FILE_NAME', ARGV[0]))
+  io.close_write
+}
+

@@ -1,0 +1,251 @@
+#!/usr/bin/ruby
+
+analysis_script = <<EOR
+# "plyr" is used for merging data frames below:
+# install.packages("plyr")
+library("plyr")
+
+input_tsv_file <- 'INPUT_FILE_NAME'
+
+bioeval <- function(base, column, xlabel, ylabel, colour, scale, average=TRUE) {
+    biolevels <- levels(factor(base$age))
+    avg <- rep(0, times=length(biolevels))
+    for (i in 1:length(biolevels)) {
+        avg[i] <- mean(
+            column[ base$age == biolevels[i] ]
+        )
+    }
+
+    plot(
+            base$age,
+            t(column),
+            col=colour,
+            pch=19,
+            xlab=xlabel,
+            ylab=ylabel,
+            axes=FALSE,
+            ylim=c(min(column), max(column)/scale) # Scale, so that outliers don't squish the important details.
+        )
+    if (average) {
+        lines(biolevels, avg, col=rgb(.3,.3,.3))
+    }
+    # Trendline over all data:
+    abline(lm(column ~ base$age), col=rgb(0,.9,1.0), lwd=6)
+    lookback <- 24
+    lookback_months <- base$age[base$age > (max(base$age - lookback))]
+    trend <- lm(tail(column, length(lookback_months)) ~ lookback_months)
+    trend_prediction <- predict(trend, newdata=data.frame(x=lookback_months))
+    lines(x=lookback_months, y=trend_prediction, col=rgb(1.0,0,.6), lwd=6)
+    
+    axis(1,min(base$age):max(base$age))
+    axis(2,min(column):max(column))
+}
+
+biosummary <- function(base, xlabel, ylabel, colours, beside=FALSE) {
+    biolevels <- levels(factor(base$age))
+    askedfreq_monthly <- aggregate(base$askedfreq, list(base$age), sum)
+    answeredfreq_monthly <- aggregate(base$answeredfreq, list(base$age), sum)
+    commentedfreq_monthly <- aggregate(base$commentedfreq, list(base$age), sum)
+    barplot(
+            rbind(askedfreq_monthly$x, answeredfreq_monthly$x, commentedfreq_monthly$x),
+            names.arg=biolevels,
+            xlab=xlabel,
+            ylab=ylabel,
+            ylim=c(0,4000),
+            legend=c("Questions", "Answers", "Comments"),
+            col=colours,
+            beside=beside
+           )
+}
+
+bioconsistency <- function(userstats, age, xlabel, ylabel, colour) {
+    accumulated <- table(c(userstats, 1:age)) - 1
+    barplot(
+            accumulated,
+            col=colour,
+            xlab=xlabel,
+            ylab=ylabel,
+            ylim=c(0, (floor(accumulated[1] / 1000) + 1) * 1000)
+        )
+}
+
+biostar <- read.table(
+        input_tsv_file,
+        sep="\t",
+        encoding="UTF-8",
+        row.names=NULL,
+        comment.char="",
+        col.names=c(
+            "id",
+            "date",
+            "year",
+            "month",
+            "day",
+            "kind",
+            "uid",
+            "username",
+            "qvote",
+            "anum",
+            "amin",
+            "amax",
+            "aavg",
+            "keywords",
+            "apikind",
+            "apikindid"
+        )
+    )
+
+biostar <- subset(biostar, year > 2009 | year == 2009 & month > 9 | year == 2009 & month == 9 & day >= 30)
+asked_freq <- rename(as.data.frame(table(biostar[biostar$kind == "asked", ]$id)), c("Var1"="id", "Freq"="askedfreq"))
+answered_freq <- rename(as.data.frame(table(biostar[biostar$kind == "answered", ]$id)), c("Var1"="id", "Freq"="answeredfreq"))
+commented_freq <- rename(as.data.frame(table(biostar[biostar$kind == "commented", ]$id)), c("Var1"="id", "Freq"="commentedfreq"))
+biostar <- merge(biostar, asked_freq, all=TRUE)
+biostar <- merge(biostar, answered_freq, all=TRUE)
+biostar <- merge(biostar, commented_freq, all=TRUE)
+biostar[is.na(biostar)] <- 0
+
+biostar$age <- (
+        (
+            biostar$year -
+            rep(min(biostar$year), times=length(biostar$year))
+        )*12 +
+        biostar$month
+    )
+biostar$age <- biostar$age -
+            rep(min(biostar$age), times=length(biostar$age)) +
+            1
+
+biostar$userfreq <- 0
+
+for (age in min(biostar$age):max(biostar$age)) {
+    if (length(biostar[biostar$age == age, ]$uid) > 0) {
+        biostar[biostar$age == age, ]$userfreq <- nrow(table(biostar[biostar$age == age, ]$uid))
+    }
+}
+
+# Determine the number of months in which users have been active. Note that
+# user_consistency will contain "0" for uids that have not been spotted.
+user_consistency <- rep(0, max(biostar$uid))
+for (age in min(biostar$age):max(biostar$age)) {
+    user_consistency[biostar[biostar$age == age, ]$uid] <- user_consistency[biostar[biostar$age == age, ]$uid] + 1
+}
+
+png("crawled_participation.png", height=1300, width=1300, unit="px", pointsize=26)
+bioconsistency(
+        user_consistency[user_consistency > 0],
+        max(biostar$age),
+        'Month of Participation',
+        'Number of Active Users',
+        "#ee6633"
+    )
+dev.off()
+
+png("crawled_users.png", height=1300, width=1300, unit="px", pointsize=26)
+bioeval(
+        biostar[biostar$kind == "asked", ],
+        biostar[biostar$kind == "asked", ]$userfreq,
+        'Biostar Month',
+        'Number of Active Users',
+        "#ff7733",
+        1,
+        FALSE
+    )
+dev.off()
+
+png("crawled_qvote.png", height=1300, width=1300, unit="px", pointsize=26)
+bioeval(
+        biostar[biostar$kind == "asked", ],
+        biostar[biostar$kind == "asked", ]$qvote,
+        'Biostar Month',
+        'Voting-Score of Questions',
+        rgb(100,100,0,5,maxColorValue=255),
+        2
+    )
+dev.off()
+
+png("crawled_num.png", height=1300, width=1300, unit="px", pointsize=26)
+bioeval(
+        biostar[biostar$kind == "asked", ],
+        biostar[biostar$kind == "asked", ]$anum,
+        'Biostar Month',
+        'Number of Answers per Question',
+        rgb(0,100,100,5,maxColorValue=255),
+        2
+    )
+dev.off()
+
+png("crawled_min.png", height=1300, width=1300, unit="px", pointsize=26)
+bioeval(
+        biostar[biostar$kind == "asked", ],
+        biostar[biostar$kind == "asked", ]$amin,
+        'Biostar Month',
+        'Min. Answer Voting-Score per Question',
+        rgb(100,0,0,5,maxColorValue=255),
+        2
+    )
+dev.off()
+
+png("crawled_max.png", height=1300, width=1300, unit="px", pointsize=26)
+bioeval(
+        biostar[biostar$kind == "asked", ],
+        biostar[biostar$kind == "asked", ]$amax,
+        'Biostar Month',
+        'Max. Answer Voting-Score per Question',
+        rgb(0,0,100,5,maxColorValue=255),
+        2
+    )
+dev.off()
+
+png("crawled_avote.png", height=1300, width=1300, unit="px", pointsize=26)
+bioeval(
+        biostar[biostar$kind == "asked", ],
+        biostar[biostar$kind == "asked", ]$aavg,
+        'Biostar Month',
+        'Avg. Answer Voting-Score per Question',
+        rgb(100,0,100,5,maxColorValue=255),
+        2
+    )
+dev.off()
+
+png("crawled_activity_stacked.png", height=1300, width=1300, unit="px", pointsize=26)
+biosummary(
+        biostar[biostar$kind == "asked", ],
+        'Biostar Month',
+        'User Actions',
+        c("#4455bb", "#aa1199", "#00cc44")
+    )
+dev.off()
+
+png("crawled_activity.png", height=1300, width=1300, unit="px", pointsize=26)
+biosummary(
+        biostar[biostar$kind == "asked", ],
+        'Biostar Month',
+        'User Actions',
+        c("#4455bb", "#aa1199", "#00cc44"),
+        TRUE
+    )
+dev.off()
+EOR
+
+R = '/usr/bin/R'
+
+unless File.exist?(R) then
+  puts 'Please install R (http://www.r-project.org) as: /usr/bin/R'
+  puts ''
+  puts 'Also, install the plyr package via: install.packages("plyr")'
+  exit 1
+end
+
+if ARGV.length != 1 then
+  puts 'Usage: biostar_crawled_stats crawledtsvfile'
+  puts ''
+  puts 'Example (data provided at http://github.com/joejimbo/bioruby-biostars-analytics):'
+  puts '  biostar_api_stats data/20140328_crawled.tsv'
+  exit 2
+end
+
+IO.popen("#{R} --no-save", 'w') { |io|
+  io.puts(analysis_script.sub('INPUT_FILE_NAME', ARGV[0]))
+  io.close_write
+}
+

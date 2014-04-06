@@ -14,13 +14,14 @@ require 'rake'
 require 'jeweler'
 Jeweler::Tasks.new do |gem|
   # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
-  gem.name = "bio-biostars-analytics"
-  gem.homepage = "http://github.com/joejimbo/bioruby-biostars-analytics"
-  gem.license = "MIT"
-  gem.summary = %Q{TODO: one-line summary of your gem}
-  gem.description = %Q{TODO: longer description of your gem}
-  gem.email = "joachim.baran@gmail.com"
-  gem.authors = ["Joachim Baran"]
+  gem.name = 'bio-biostars-analytics'
+  gem.homepage = 'http://github.com/joejimbo/bioruby-biostars-analytics'
+  gem.license = 'MIT'
+  gem.summary = %Q{Biostars data-mining and statistical analysis.}
+  gem.description = %Q{Ruby script for data-mining biostars.org using web-crawling techniques as well as utilizing the Biostars RESTful API. Statistical analysis requires R (http://www.r-project.org).}
+  gem.email = 'joachim.baran@gmail.com'
+  gem.authors = [ 'Joachim Baran' ]
+  gem.executables = [ 'biostars-analytics', 'biostar_api_stats', 'biostar_crawled_stats' ]
   # dependencies defined in Gemfile
 end
 Jeweler::RubygemsDotOrgTasks.new
