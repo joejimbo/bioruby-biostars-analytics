@@ -11,7 +11,6 @@ group :development do
   gem "jeweler", "~> 2.0.1", :git => "https://github.com/technicalpickles/jeweler.git"
   gem "bundler", ">= 1.0.21"
   gem "bio", ">= 1.4.2"
-  gem "rdoc", "~> 3.12"
 
   # Required for mining:
   gem "hpricot", "~> 0.8.6"
