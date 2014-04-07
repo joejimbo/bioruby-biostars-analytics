@@ -130,7 +130,7 @@ for (age in min(biostar$age):max(biostar$age)) {
     user_consistency[biostar[biostar$age == age, ]$uid] <- user_consistency[biostar[biostar$age == age, ]$uid] + 1
 }
 
-png("crawled_participation.png", height=1300, width=1300, unit="px", pointsize=26)
+png("crawled_participation.png", height=900, width=1300, unit="px", pointsize=26)
 bioconsistency(
         user_consistency[user_consistency > 0],
         max(biostar$age),
@@ -140,7 +140,7 @@ bioconsistency(
     )
 dev.off()
 
-png("crawled_users.png", height=1300, width=1300, unit="px", pointsize=26)
+png("crawled_users.png", height=900, width=1300, unit="px", pointsize=26)
 bioeval(
         biostar[biostar$kind == "asked", ],
         biostar[biostar$kind == "asked", ]$userfreq,
@@ -152,7 +152,7 @@ bioeval(
     )
 dev.off()
 
-png("crawled_qvote.png", height=1300, width=1300, unit="px", pointsize=26)
+png("crawled_qvote.png", height=900, width=1300, unit="px", pointsize=26)
 bioeval(
         biostar[biostar$kind == "asked", ],
         biostar[biostar$kind == "asked", ]$qvote,
@@ -163,7 +163,7 @@ bioeval(
     )
 dev.off()
 
-png("crawled_num.png", height=1300, width=1300, unit="px", pointsize=26)
+png("crawled_num.png", height=900, width=1300, unit="px", pointsize=26)
 bioeval(
         biostar[biostar$kind == "asked", ],
         biostar[biostar$kind == "asked", ]$anum,
@@ -174,7 +174,7 @@ bioeval(
     )
 dev.off()
 
-png("crawled_min.png", height=1300, width=1300, unit="px", pointsize=26)
+png("crawled_min.png", height=900, width=1300, unit="px", pointsize=26)
 bioeval(
         biostar[biostar$kind == "asked", ],
         biostar[biostar$kind == "asked", ]$amin,
@@ -185,7 +185,7 @@ bioeval(
     )
 dev.off()
 
-png("crawled_max.png", height=1300, width=1300, unit="px", pointsize=26)
+png("crawled_max.png", height=900, width=1300, unit="px", pointsize=26)
 bioeval(
         biostar[biostar$kind == "asked", ],
         biostar[biostar$kind == "asked", ]$amax,
@@ -196,7 +196,7 @@ bioeval(
     )
 dev.off()
 
-png("crawled_avote.png", height=1300, width=1300, unit="px", pointsize=26)
+png("crawled_avote.png", height=900, width=1300, unit="px", pointsize=26)
 bioeval(
         biostar[biostar$kind == "asked", ],
         biostar[biostar$kind == "asked", ]$aavg,
@@ -207,7 +207,7 @@ bioeval(
     )
 dev.off()
 
-png("crawled_activity_stacked.png", height=1300, width=1300, unit="px", pointsize=26)
+png("crawled_activity_stacked.png", height=900, width=1300, unit="px", pointsize=26)
 biosummary(
         biostar[biostar$kind == "asked", ],
         'Biostar Month',
@@ -216,7 +216,7 @@ biosummary(
     )
 dev.off()
 
-png("crawled_activity.png", height=1300, width=1300, unit="px", pointsize=26)
+png("crawled_activity.png", height=900, width=1300, unit="px", pointsize=26)
 biosummary(
         biostar[biostar$kind == "asked", ],
         'Biostar Month',
