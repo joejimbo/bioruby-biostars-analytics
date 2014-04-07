@@ -325,11 +325,8 @@ module BioBiostarsAnalytics
       puts '  <date>_crawled.tsv : data mined from crawling over posts'
       puts '  <date>_api.tsv     : data extracted from the Biostar API'
       puts ''
-      puts 'Example 1: mining Biostars in March 2014:'
+      puts 'Example: mining Biostars in March 2014:'
       puts '  biostars-analytics 96000 54'
-      puts ''
-      puts 'Example 2: mining last month data with post numbers determined manually:'
-      puts '  biostars-analytics 234 1 123'
       exit 1
     end
 
