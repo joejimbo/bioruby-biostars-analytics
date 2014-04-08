@@ -4,6 +4,7 @@
 
 Data-mining analysis that make use of this gem (newest to oldest):
 
+-  [Analyzing the Biostar: Fourth Anniversary](http://joachimbaran.wordpress.com/2014/04/07/biostar_analysis_4th_year/)
 -  [Uh-oh, Biostar: Three Years of User Metrics Analysis](http://joachimbaran.wordpress.com/2013/03/15/uh-oh-biostar/)
 -  [BioStar: Activity of its BioStars](http://joachimbaran.wordpress.com/2012/03/20/biostar-activity-of-its-biostars/)
 -  [BioStar: Is the BioStar fading? An Annual Follow-Up](http://joachimbaran.wordpress.com/2012/03/11/biostar-second-analysis/)
@@ -59,12 +60,16 @@ Various plots in PNG file format can be generated via:
 
 #### Statistics (based on RESTful API data)
 
+Generates plots as PNG files in the current working directory.
+
     Usage: biostar_api_stats apitsvfile
     
     Example (data provided at http://github.com/joejimbo/bioruby-biostars-analytics):
       biostar_api_stats data/20140328_api.tsv
 
 #### Statistics (based on forum mining/crawling)
+
+Generates plots as PNG files in the current working directory.
 
     Usage: biostar_crawled_stats crawledtsvfile
     
