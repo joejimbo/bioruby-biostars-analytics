@@ -225,6 +225,24 @@ biosummary(
         TRUE
     )
 dev.off()
+
+contributor_cutoff <- 15
+all_time_top_contributors <- rownames(head(sort(table(biostar$username), decreasing=TRUE), n=contributor_cutoff))
+top_contributors <- c()
+yearspan <- sort(unique(biostar[biostar$year > 2009 & biostar$year < 2014, ]$year))
+for (year in yearspan) {
+    top_contributors <- c(top_contributors, table(biostar[biostar$year == year & biostar$apikind == 'Question', ]$username)[all_time_top_contributors])
+}
+png("crawled_top_contributor_activity.png", height=900, width=1300, unit="px", pointsize=20)
+barplot(matrix(top_contributors, nrow=contributor_cutoff),
+        names.arg=yearspan,
+        beside=TRUE,
+        col=rainbow(contributor_cutoff, alpha=0.6),
+        ylim=c(0, 2500),
+        xlab='Year',
+        ylab='Number of Contributions ("Question" related only)',
+        legend=head(names(top_contributors), n=contributor_cutoff))
+dev.off()
 EOR
 
 R = '/usr/bin/R'

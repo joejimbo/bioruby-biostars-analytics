@@ -117,9 +117,26 @@ for (age_in_month in min(biostar$age_in_month):max(biostar$age_in_month)) {
 
 # Determine the number of months for which users have been active.
 #  1. over the whole time span
-#  2. except for the last three months
+#  2. except for the last three, six and twelve months
 useractivity <- table(as.numeric(table(unlist(users_per_month))))
-useractivity_wo_last_3_months <- table(as.numeric(table(unlist(users_per_month[c(seq(4, max(length(users_per_month))))]))))
+useractivity_wo_last_3_months <- table(as.numeric(table(unlist(users_per_month[c(seq(1, max(length(users_per_month)) - 3))]))))
+useractivity_wo_last_6_months <- table(as.numeric(table(unlist(users_per_month[c(seq(1, max(length(users_per_month)) - 6))]))))
+useractivity_wo_last_12_months <- table(as.numeric(table(unlist(users_per_month[c(seq(1, max(length(users_per_month)) - 12))]))))
+
+png("api_participation_comparison.png", height=900, width=1300, unit="px", pointsize=26)
+barplot(
+  t(data.frame(useractivity[seq(1, 12)],
+               useractivity_wo_last_3_months[seq(1, 12)],
+               useractivity_wo_last_6_months[seq(1, 12)],
+               useractivity_wo_last_12_months[seq(1, 12)])),
+               col=c("#ee6633", "#aa3300", "#660000", "#220000"),
+               xlab='Months of Participation (cut-off: one year)',
+               ylab='Number of Active Users',
+               ylim=c(0,4000),
+               beside=TRUE,
+               legend=c("complete dataset", "last three months removed", "last six months removed", "last year removed")
+)
+dev.off()
 
 png("api_participation.png", height=900, width=1300, unit="px", pointsize=26)
 biobarplot(
